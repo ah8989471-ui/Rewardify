@@ -27,5 +27,8 @@
         "CACHE_STORE": "array",
         "QUEUE_CONNECTION": "sync",
         "LOG_CHANNEL": "stderr"
-    }
+    },
+    "regions": [
+        "bom1"
+    ]
 }

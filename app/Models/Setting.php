@@ -11,16 +11,20 @@ class Setting extends Model
 
     public static function get(string $key, ?string $default = null): ?string
     {
-        $value = Cache::rememberForever("setting.{$key}", function () use ($key) {
-            return static::where('key', $key)->value('value');
+        // Load every setting in ONE query per request (cached), instead of
+        // one database round-trip per key - vital when the database is far
+        // from the web server.
+        $all = Cache::rememberForever('settings.all', function () {
+            return static::pluck('value', 'key')->all();
         });
 
-        return $value ?? $default;
+        return $all[$key] ?? $default;
     }
 
     public static function set(string $key, ?string $value): void
     {
         static::updateOrCreate(['key' => $key], ['value' => $value]);
+        Cache::forget('settings.all');
         Cache::forget("setting.{$key}");
     }
 
