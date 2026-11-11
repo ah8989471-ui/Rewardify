@@ -100,35 +100,14 @@ Route::middleware(['auth', 'active.account', 'admin'])
     });
 
 /* ---------------------------------------------------------------------
- | TEMPORARY production diagnostic - remove after the deploy is fixed.
- | Returns booleans, driver names, an error class/code and a short
- | error message. It never prints any password or key value.
+ | Favicon - the site logo (blue rounded square, white play mark),
+ | served through Laravel because Vercel routes every request here.
  * ------------------------------------------------------------------- */
-Route::get('/healthz-db', function () {
-    $out = ['app_key' => 'fail', 'db' => 'fail', 'settings' => null];
-    try {
-        $key = (string) config('app.key');
-        $raw = str_starts_with($key, 'base64:') ? base64_decode(substr($key, 7), true) : $key;
-        $out['app_key'] = ($raw !== false && strlen($raw) === 32) ? 'ok' : 'fail';
-    } catch (\Throwable $e) {
-        $out['app_key'] = 'fail';
-    }
-    $out['drivers'] = \PDO::getAvailableDrivers();
-    $out['db_host_set'] = (bool) config('database.connections.pgsql.host');
-    $out['db_user_set'] = (bool) config('database.connections.pgsql.username');
-    $out['db_pass_set'] = (bool) config('database.connections.pgsql.password');
-    try {
-        \Illuminate\Support\Facades\DB::connection()->getPdo();
-        $out['db'] = 'connected';
-        $out['settings'] = \Illuminate\Support\Facades\DB::table('settings')->count();
-    } catch (\Throwable $e) {
-        $out['db'] = 'fail';
-        $out['ex_class'] = class_basename($e);
-        $out['ex_code'] = (string) $e->getCode();
-        if (isset($e->errorInfo[0])) {
-            $out['error_info'] = $e->errorInfo[0];
-        }
-        $out['ex_msg'] = substr($e->getMessage(), 0, 160);
-    }
-    return response()->json($out);
+Route::get('/favicon.svg', function () {
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1d55f1"/><path d="M26 20.5v23l19-11.5z" fill="#ffffff"/></svg>';
+    return response($svg, 200, [
+        'Content-Type' => 'image/svg+xml',
+        'Cache-Control' => 'public, max-age=604800',
+    ]);
 });
+Route::get('/favicon.ico', fn () => redirect('/favicon.svg'));
