@@ -100,12 +100,12 @@ Route::middleware(['auth', 'active.account', 'admin'])
     });
 
 /* ---------------------------------------------------------------------
- | TEMPORARY production diagnostic — remove after the deploy is fixed.
- | Returns booleans, a row count and a SQLSTATE code only.
- | It never prints any password, key or other secret value.
+ | TEMPORARY production diagnostic - remove after the deploy is fixed.
+ | Returns booleans, driver names, an error class/code and a short
+ | error message. It never prints any password or key value.
  * ------------------------------------------------------------------- */
 Route::get('/healthz-db', function () {
-    $out = ['app_key' => 'fail', 'db' => 'fail', 'sqlstate' => null, 'settings' => null];
+    $out = ['app_key' => 'fail', 'db' => 'fail', 'settings' => null];
     try {
         $key = (string) config('app.key');
         $raw = str_starts_with($key, 'base64:') ? base64_decode(substr($key, 7), true) : $key;
@@ -113,17 +113,22 @@ Route::get('/healthz-db', function () {
     } catch (\Throwable $e) {
         $out['app_key'] = 'fail';
     }
+    $out['drivers'] = \PDO::getAvailableDrivers();
+    $out['db_host_set'] = (bool) config('database.connections.pgsql.host');
+    $out['db_user_set'] = (bool) config('database.connections.pgsql.username');
+    $out['db_pass_set'] = (bool) config('database.connections.pgsql.password');
     try {
         \Illuminate\Support\Facades\DB::connection()->getPdo();
         $out['db'] = 'connected';
         $out['settings'] = \Illuminate\Support\Facades\DB::table('settings')->count();
     } catch (\Throwable $e) {
         $out['db'] = 'fail';
-        if ($e instanceof \Illuminate\Database\QueryException && isset($e->errorInfo[0])) {
-            $out['sqlstate'] = $e->errorInfo[0];
-        } elseif (is_string($e->getCode()) && $e->getCode() !== '') {
-            $out['sqlstate'] = $e->getCode();
+        $out['ex_class'] = class_basename($e);
+        $out['ex_code'] = (string) $e->getCode();
+        if (isset($e->errorInfo[0])) {
+            $out['error_info'] = $e->errorInfo[0];
         }
+        $out['ex_msg'] = substr($e->getMessage(), 0, 160);
     }
     return response()->json($out);
 });
