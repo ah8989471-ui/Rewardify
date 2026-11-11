@@ -98,3 +98,32 @@ Route::middleware(['auth', 'active.account', 'admin'])
         Route::post('/withdrawals/{withdrawal}/approve', [AdminController::class, 'withdrawalApprove'])->name('withdrawals.approve');
         Route::post('/withdrawals/{withdrawal}/reject', [AdminController::class, 'withdrawalReject'])->name('withdrawals.reject');
     });
+
+/* ---------------------------------------------------------------------
+ | TEMPORARY production diagnostic — remove after the deploy is fixed.
+ | Returns booleans, a row count and a SQLSTATE code only.
+ | It never prints any password, key or other secret value.
+ * ------------------------------------------------------------------- */
+Route::get('/healthz-db', function () {
+    $out = ['app_key' => 'fail', 'db' => 'fail', 'sqlstate' => null, 'settings' => null];
+    try {
+        $key = (string) config('app.key');
+        $raw = str_starts_with($key, 'base64:') ? base64_decode(substr($key, 7), true) : $key;
+        $out['app_key'] = ($raw !== false && strlen($raw) === 32) ? 'ok' : 'fail';
+    } catch (\Throwable $e) {
+        $out['app_key'] = 'fail';
+    }
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        $out['db'] = 'connected';
+        $out['settings'] = \Illuminate\Support\Facades\DB::table('settings')->count();
+    } catch (\Throwable $e) {
+        $out['db'] = 'fail';
+        if ($e instanceof \Illuminate\Database\QueryException && isset($e->errorInfo[0])) {
+            $out['sqlstate'] = $e->errorInfo[0];
+        } elseif (is_string($e->getCode()) && $e->getCode() !== '') {
+            $out['sqlstate'] = $e->getCode();
+        }
+    }
+    return response()->json($out);
+});
