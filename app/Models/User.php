@@ -143,6 +143,31 @@ class User extends Authenticatable
     }
 
     /**
+     * Debit the wallet even if the balance would go negative, and
+     * write a ledger row, atomically. Used for offerwall chargebacks,
+     * which must net out a credit that may already have been
+     * withdrawn - the plain debit() refuses those.
+     */
+    public function forceDebit(string $amount, string $kind, ?string $description = null, ?string $reference = null): Transaction
+    {
+        return DB::transaction(function () use ($amount, $kind, $description, $reference) {
+            $user = static::whereKey($this->id)->lockForUpdate()->first();
+            $user->balance = bcsub((string) $user->balance, $amount, 4);
+            $user->save();
+            $this->balance = $user->balance;
+
+            return $user->transactions()->create([
+                'type' => 'debit',
+                'kind' => $kind,
+                'amount' => $amount,
+                'balance_after' => $user->balance,
+                'description' => $description,
+                'reference' => $reference,
+            ]);
+        });
+    }
+
+    /**
      * Pay the referrer their commission on this user's earning.
      * Rate comes from the `referral_commission_percent` setting.
      */

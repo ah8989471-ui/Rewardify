@@ -28,6 +28,14 @@ Route::match(['get', 'post'], '/postback/cpagrip', [PostbackController::class, '
     ->name('postback.cpagrip');
 
 /* ---------------------------------------------------------------------
+ | BitcoTasks S2S postback (public, protected by the MD5 signature;
+ | CSRF-exempt via the postback/* exception in bootstrap/app.php)
+ * ------------------------------------------------------------------- */
+
+Route::match(['get', 'post'], '/postback/bitcotasks', [PostbackController::class, 'bitcotasks'])
+    ->name('postback.bitcotasks');
+
+/* ---------------------------------------------------------------------
  | Auth
  * ------------------------------------------------------------------- */
 
@@ -53,6 +61,7 @@ Route::middleware(['auth', 'active.account', 'verified.email'])->group(function 
     Route::get('/dashboard', [UserPanelController::class, 'dashboard'])->name('dashboard');
     Route::get('/tasks', [UserPanelController::class, 'tasks'])->name('tasks');
     Route::get('/offerwall', [UserPanelController::class, 'offerwall'])->name('offerwall');
+    Route::get('/bitcotasks', [UserPanelController::class, 'bitcotasks'])->name('bitcotasks');
 
     Route::get('/tasks/{task}/watch', [AdPlayerController::class, 'start'])->name('tasks.watch');
     Route::get('/watch/embed/{token}', [AdPlayerController::class, 'embed'])->name('tasks.embed');
@@ -86,6 +95,8 @@ Route::middleware(['auth', 'active.account', 'admin'])
         Route::get('/cpagrip', [AdminController::class, 'cpagrip'])->name('cpagrip');
         Route::post('/cpagrip', [AdminController::class, 'updateCpagrip'])->name('cpagrip.update');
         Route::post('/cpagrip/regenerate-secret', [AdminController::class, 'regenerateSecret'])->name('cpagrip.secret');
+
+        Route::post('/bitcotasks', [AdminController::class, 'updateBitcotasks'])->name('bitcotasks.update');
 
         Route::get('/tasks', [AdminController::class, 'tasks'])->name('tasks');
         Route::get('/tasks/create', [AdminController::class, 'taskCreate'])->name('tasks.create');

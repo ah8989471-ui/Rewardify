@@ -32,7 +32,9 @@ class Transaction extends Model
     {
         return match ($this->kind) {
             'ad_view' => 'Ad view reward',
-            'offerwall' => 'Offerwall (CPAGrip)',
+            'offerwall' => str_starts_with((string) $this->reference, 'bitcotasks:')
+                ? 'Offerwall (BitcoTasks)'
+                : 'Offerwall (CPAGrip)',
             'referral_commission' => 'Referral commission',
             'withdrawal' => 'Withdrawal',
             'withdrawal_refund' => 'Withdrawal refund',

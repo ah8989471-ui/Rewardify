@@ -28,6 +28,11 @@ class SettingsSeeder extends Seeder
             'cpagrip_iframe_code' => '',
             // Shared secret required on the postback endpoint.
             'postback_secret' => Str::random(32),
+            // BitcoTasks: paste the app API key + S2S secret from
+            // BitcoTasks (My Apps -> Edit) in Admin > CPAGrip >
+            // BitcoTasks section. Empty until the admin sets them.
+            'bitcotasks_api_key' => '',
+            'bitcotasks_secret' => '',
         ];
 
         foreach ($defaults as $key => $value) {

@@ -89,6 +89,21 @@ class UserPanelController extends Controller
         ]);
     }
 
+    public function bitcotasks(Request $request)
+    {
+        return view('user.bitcotasks', [
+            'wallUrl' => $this->bitcotasksWallUrl($request->user()->id),
+        ]);
+    }
+
+    /** BitcoTasks offerwall URL with the user id as the wall's subid. */
+    public function bitcotasksWallUrl(int $userId): ?string
+    {
+        $apiKey = trim((string) Setting::get('bitcotasks_api_key', ''));
+
+        return $apiKey === '' ? null : 'https://bitcotasks.com/offerwall/'.$apiKey.'/'.$userId;
+    }
+
     /** CPAGrip offerwall URL with the user id substituted as subid. */
     public function offerwallUrl(int $userId): ?string
     {

@@ -162,8 +162,31 @@ class AdminController extends Controller
         return view('admin.cpagrip', [
             'settings' => $this->currentSettings(),
             'postbackUrl' => url('/postback/cpagrip'),
+            'bitcotasksPostbackUrl' => url('/postback/bitcotasks'),
             'logs' => PostbackLog::with('user')->latest()->paginate(15),
         ]);
+    }
+
+    /* ---------------------------------------------------------------
+     | BitcoTasks integration settings (section on the CPAGrip page)
+     * -------------------------------------------------------------- */
+
+    public function updateBitcotasks(Request $request)
+    {
+        $data = $request->validate([
+            'bitcotasks_api_key' => ['nullable', 'string', 'max:255'],
+            'bitcotasks_secret' => ['nullable', 'string', 'min:16', 'max:128'],
+        ]);
+
+        Setting::set('bitcotasks_api_key', $data['bitcotasks_api_key'] ?? '');
+
+        // The secret is never shown back on the page, so only overwrite
+        // it when the admin typed a new one - blank keeps the saved one.
+        if (! empty($data['bitcotasks_secret'])) {
+            Setting::set('bitcotasks_secret', $data['bitcotasks_secret']);
+        }
+
+        return back()->with('status', 'BitcoTasks settings saved. The offerwall now uses the new API key.');
     }
 
     public function updateCpagrip(Request $request)
@@ -192,6 +215,7 @@ class AdminController extends Controller
             'site_name', 'site_tagline', 'admin_whatsapp', 'min_withdrawal',
             'default_reward', 'default_duration', 'referral_commission_percent',
             'cpagrip_offerwall_url', 'cpagrip_iframe_code', 'postback_secret',
+            'bitcotasks_api_key', 'bitcotasks_secret',
         ];
 
         $values = [];
